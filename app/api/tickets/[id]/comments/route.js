@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
+import { safe } from '@/lib/safe';
 import { isAdmin } from '@/lib/auth';
 import { idFromRef } from '@/lib/constants';
 import { addComment, getTicket } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(req, { params }) {
+async function POST_(req, { params }) {
   const id = idFromRef((await params).id);
   const b = await req.json().catch(() => ({}));
   const body = String(b.body ?? '').trim().slice(0, 5000);
@@ -18,3 +19,5 @@ export async function POST(req, { params }) {
   const comment = await addComment(id, author, admin ? 'it' : 'user', body);
   return NextResponse.json({ comment }, { status: 201 });
 }
+
+export const POST = safe(POST_);

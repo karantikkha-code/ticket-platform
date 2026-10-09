@@ -1,21 +1,22 @@
 import { NextResponse } from 'next/server';
+import { safe } from '@/lib/safe';
 import { isAdmin } from '@/lib/auth';
 import { PRIORITIES, STATUSES, idFromRef, refOf } from '@/lib/constants';
 import { deleteTicket, getTicket, listComments, updateTicket } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(req, { params }) {
+async function GET_(req, { params }) {
   const id = idFromRef((await params).id);
   const email = (new URL(req.url).searchParams.get('email') || '').trim().toLowerCase();
-  const ticket = Number.isFinite(id) ? await getTicket(id) : null;
+  const [ticket, comments] = Number.isFinite(id) ? await Promise.all([getTicket(id), listComments(id)]) : [null, []];
   const allowed = ticket && ((await isAdmin()) || (email && email === ticket.email));
   // Same message for "not found" and "wrong email" so ticket numbers can't be probed.
   if (!allowed) return NextResponse.json({ error: 'No ticket found for this ticket number and email.' }, { status: 404 });
-  return NextResponse.json({ ticket: { ...ticket, ref: refOf(ticket.id) }, comments: await listComments(id) });
+  return NextResponse.json({ ticket: { ...ticket, ref: refOf(ticket.id) }, comments });
 }
 
-export async function PATCH(req, { params }) {
+async function PATCH_(req, { params }) {
   if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const id = idFromRef((await params).id);
   const b = await req.json().catch(() => ({}));
@@ -34,8 +35,12 @@ export async function PATCH(req, { params }) {
   return NextResponse.json({ ticket: { ...row, ref: refOf(row.id) } });
 }
 
-export async function DELETE(_req, { params }) {
+async function DELETE_(_req, { params }) {
   if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   await deleteTicket(idFromRef((await params).id));
   return NextResponse.json({ ok: true });
 }
+
+export const GET = safe(GET_);
+export const PATCH = safe(PATCH_);
+export const DELETE = safe(DELETE_);

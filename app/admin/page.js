@@ -88,7 +88,7 @@ export default function Admin() {
           <button className="ghost sm" onClick={logout}>Sign out</button>
         </div>
       </div>
-      {!me.hasDb && <div className="note"><b>Demo mode:</b> no database is connected, so tickets are kept in memory and will be lost. Connect a Postgres database (DATABASE_URL) before real use.</div>}
+      {!me.hasDb && <div className="note"><b>Demo mode:</b> no database is connected, so tickets are kept in memory and will be lost. Connect Google Sheets (SHEETS_WEBAPP_URL and SHEETS_SECRET) or a Postgres database (DATABASE_URL) before real use.</div>}
       {err && <p className="err">{err}</p>}
 
       <div className="stats">

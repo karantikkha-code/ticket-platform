@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { safe } from '@/lib/safe';
 import { isAdmin } from '@/lib/auth';
 import { CATEGORIES, PRIORITIES, refOf } from '@/lib/constants';
 import { createTicket, listTickets } from '@/lib/db';
@@ -6,13 +7,13 @@ import { createTicket, listTickets } from '@/lib/db';
 export const dynamic = 'force-dynamic';
 const clean = (v, max) => String(v ?? '').trim().slice(0, max);
 
-export async function GET() {
+async function GET_() {
   if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const rows = await listTickets();
   return NextResponse.json({ tickets: rows.map((t) => ({ ...t, ref: refOf(t.id) })) });
 }
 
-export async function POST(req) {
+async function POST_(req) {
   const b = await req.json().catch(() => ({}));
   const t = {
     name: clean(b.name, 100),
@@ -31,3 +32,6 @@ export async function POST(req) {
   const row = await createTicket(t);
   return NextResponse.json({ id: row.id, ref: refOf(row.id) }, { status: 201 });
 }
+
+export const GET = safe(GET_);
+export const POST = safe(POST_);
